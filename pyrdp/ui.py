@@ -1,25 +1,27 @@
-'''
+"""
 Created on 20/08/2013
 
 @author: tiago
-'''
+"""
 
 from PyQt4 import QtCore, QtGui, QtNetwork
 from pyrdp.rdp import Settings, RdpConnection
 from uno import unicode
-class MainWindow(QtGui.QWidget):    
-    '''
+
+
+class MainWindow(QtGui.QWidget):
+    """
     PyRdp Main Window
-    '''
+    """
     
     _tabs = None
     
     def __init__(self, width, height):
-        '''
+        """
         Constructor
-        '''        
+        """
         super().__init__()
-        self.resize(width, height);
+        self.resize(width, height)
         self.setWindowTitle('PyRdp')        
         self.move_center()
         self.setFixedSize(self.size())        
@@ -47,8 +49,7 @@ class MainWindow(QtGui.QWidget):
         
         #TODO: Handle connection
     
-    
-            
+
 class ConnectionTab(QtGui.QWidget):
     
     _conn = None

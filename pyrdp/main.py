@@ -1,8 +1,8 @@
-'''
+"""
 Created on 20/08/2013
 
 @author: tiago
-'''
+"""
 
 from pyrdp.ui import QtSingleApplication, MainWindow
 import sys
