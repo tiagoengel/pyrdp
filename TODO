@@ -1,0 +1,7 @@
+ui.MainWindow: Handle messages (Read connection properties and open connection)
+ui.ConnectionTab: Close connection when window is closed
+ui.ConnectionTab: Add close button to tab
+ui.QtSingleApplication: Close all connections when app is closed
+main: Define real app id
+main: Define messages for open an connection
+main: Handle command line args
