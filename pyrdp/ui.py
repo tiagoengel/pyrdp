@@ -100,31 +100,31 @@ class QtSingleApplication(QtGui.QApplication):
             self._inStream = None
             self._server = QtNetwork.QLocalServer()
             self._server.listen(self._id)
-            self._server.newConnection.connect(self._onNewConnection)
+            self._server.newConnection.connect(self._on_new_connection)
 
-    def isRunning(self):
+    def is_running(self):
         return self._isRunning
 
     def id(self):
         return self._id
 
-    def activationWindow(self):
+    def activation_window(self):
         return self._activationWindow
 
-    def setActivationWindow(self, activationWindow, activateOnMessage = True):
+    def set_activation_window(self, activationWindow, activateOnMessage = True):
         self._activationWindow = activationWindow
         self._activateOnMessage = activateOnMessage
         self.messageReceived.connect(self._activationWindow.handle_message)
 
-    def activateWindow(self):
+    def activate_window(self):
         if not self._activationWindow:
             return
 #         self._activationWindow.setWindowState(
 #             self._activationWindow.windowState() & Qt.WindowMinimized)
         self._activationWindow.raise_()
-        self._activationWindow.activateWindow()
+        self._activationWindow.activate_window()
 
-    def sendMessage(self, msg):
+    def send_message(self, msg):
         if not self._outStream:
             return False
         self._outStream << msg << '\n'
@@ -132,19 +132,19 @@ class QtSingleApplication(QtGui.QApplication):
         
         return self._outSocket.waitForBytesWritten()
 
-    def _onNewConnection(self):
+    def _on_new_connection(self):
         if self._inSocket:
-            self._inSocket.readyRead.disconnect(self._onReadyRead)
+            self._inSocket.readyRead.disconnect(self._on_ready_read)
         self._inSocket = self._server.nextPendingConnection()
         if not self._inSocket:
             return
         self._inStream = QtCore.QTextStream(self._inSocket)
         self._inStream.setCodec('UTF-8')
-        self._inSocket.readyRead.connect(self._onReadyRead)
+        self._inSocket.readyRead.connect(self._on_ready_read)
         if self._activateOnMessage:
-            self.activateWindow()
+            self.activate_window()
 
-    def _onReadyRead(self):
+    def _on_ready_read(self):
         while True:
             msg = self._inStream.readLine()
             if not msg: break

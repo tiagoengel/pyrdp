@@ -12,8 +12,8 @@ if __name__ == '__main__':
     app_id = 'pyrdp1'
     app = QtSingleApplication(app_id, sys.argv)
     
-    if app.isRunning():
-        app.sendMessage('open:connName')
+    if app.is_running():
+        app.send_message('open:connName')
         sys.exit(0)
     
     screen_rect = app.desktop().screenGeometry()
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     main_window.handle_message("teste")
     main_window.show()
     
-    app.setActivationWindow(main_window)
+    app.set_activation_window(main_window)
     
     sys.exit(app.exec_())
     
