@@ -1,4 +1,4 @@
 pyrdp
 =====
 
-An freerdp window wrapper made with PyQt
+A freerdp window wrapper made with PyQt
