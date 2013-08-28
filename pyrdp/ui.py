@@ -54,19 +54,58 @@ class MainWindow(QtGui.QWidget):
         conn_file = file.ConnectionFile(conn_name)
 
         if not conn_file.file_exists():
-            self._conn_form = ConnectionForm()
-            self._conn_form.setGeometry(Qt.QRect(100, 100, 400, 200))
+            self._conn_form = ConnectionDialog(conn_name)
             self._conn_form.exec_()
 
         cfg = conn_file.read()
         self.add_tab(rdp.RdpConnection(cfg))
 
 
-class ConnectionForm(QtGui.QDialog):
+class ConnectionDialog(QtGui.QDialog):
 
-    def __init__(self):
+    def __init__(self, conn_name):
         QtGui.QWidget.__init__(self)
-        self.setWindowTitle('Connection Form')
+        self.setWindowTitle('New Connection - ' + conn_name)
+
+        #--Layout Stuff---------------------------#
+        mainLayout = QtGui.QVBoxLayout()
+
+        layout = QtGui.QFormLayout()
+        self.lb_host = QtGui.QLabel()
+        self.lb_host.setText('Host:')
+
+        self.tf_host = QtGui.QLineEdit()
+        layout.addRow(self.lb_host, self.tf_host)
+
+        self.lb_user = QtGui.QLabel()
+        self.lb_user.setText('User:')
+
+        self.tf_user = QtGui.QLineEdit()
+        layout.addRow(self.lb_user, self.tf_user)
+
+        self.lb_pass = QtGui.QLabel()
+        self.lb_pass.setText('Password:')
+
+        self.tf_pass = QtGui.QLineEdit()
+        self.tf_pass.setEchoMode(QtGui.QLineEdit.Password)
+        layout.addRow(self.lb_pass, self.tf_pass)
+
+        mainLayout.addLayout(layout)
+
+        #--The Button------------------------------#
+        layout = QtGui.QHBoxLayout()
+        button = QtGui.QPushButton("Salvar")
+        button.setMaximumSize(QtCore.QSize(60, 30))
+        self.connect(button, QtCore.SIGNAL("clicked()"), self.close)
+
+        layout.setAlignment(QtCore.Qt.AlignRight)
+        layout.addWidget(button)
+
+        mainLayout.addLayout(layout)
+        self.setLayout(mainLayout)
+
+        self.resize(300, 150)
+        self.setFixedSize(self.size())
     
 
 class ConnectionTab(QtGui.QWidget):

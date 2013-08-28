@@ -12,7 +12,7 @@ APP_ID = "1faaffb1-cd45-485d-948b-c101fd793a92"
 
 def usage():
     hlp = """Usage:
-    pyrp [connection name]"""
+    pyrdp [connection name]"""
     print(hlp)
 
 if __name__ == '__main__':
