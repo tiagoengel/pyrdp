@@ -23,6 +23,7 @@ class ConnectionFile(object):
         file.newlines()
         for key, value in cfg.itens():
             file.write(('%s=%s' % (key, value)))
+            file.newlines()
 
         file.close()
 
