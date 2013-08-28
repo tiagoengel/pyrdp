@@ -4,8 +4,8 @@ Created on 20/08/2013
 @author: tiago
 """
 
-from PyQt4 import QtCore, QtGui, QtNetwork
-from pyrdp.rdp import Settings, RdpConnection
+from PyQt4 import QtCore, QtGui, QtNetwork, Qt
+from pyrdp import rdp, file
 from uno import unicode
 
 
@@ -26,7 +26,8 @@ class MainWindow(QtGui.QWidget):
         self.move_center()
         self.setFixedSize(self.size())        
         self._tabs = QtGui.QTabWidget(self) 
-        self._tabs.resize(width, height)       
+        self._tabs.resize(width, height)
+        self._conn_form = None
 
     def move_center(self):
         qr = self.frameGeometry()
@@ -45,9 +46,27 @@ class MainWindow(QtGui.QWidget):
             tab.close_connection()
     
     def handle_message(self, msg):
-        print('Message received %s ' % msg)
-        
-        #TODO: Handle connection
+        cmd, arg = msg.split(':')
+        if cmd == 'open':
+            self.open_connection(arg)
+
+    def open_connection(self, conn_name):
+        conn_file = file.ConnectionFile(conn_name)
+
+        if not conn_file.file_exists():
+            self._conn_form = ConnectionForm()
+            self._conn_form.setGeometry(Qt.QRect(100, 100, 400, 200))
+            self._conn_form.exec_()
+
+        cfg = conn_file.read()
+        self.add_tab(rdp.RdpConnection(cfg))
+
+
+class ConnectionForm(QtGui.QDialog):
+
+    def __init__(self):
+        QtGui.QWidget.__init__(self)
+        self.setWindowTitle('Connection Form')
     
 
 class ConnectionTab(QtGui.QWidget):
@@ -60,7 +79,7 @@ class ConnectionTab(QtGui.QWidget):
         if conn is None:
             raise ValueError("Connection can't be None")
         
-        self._conn = conn;
+        self._conn = conn
         self.resize(width, height)
         self._conn.cfg.size = ('%dx%d' % (self.width() - 10, self.height() - 25))
         
@@ -83,7 +102,7 @@ class QtSingleApplication(QtGui.QApplication):
 
         super(QtSingleApplication, self).__init__(*argv)
         self._id = appid
-        self._activationWindow = None
+        self._activation_window = None
         self._activateOnMessage = False
 
         self._outSocket = QtNetwork.QLocalSocket()
@@ -108,21 +127,22 @@ class QtSingleApplication(QtGui.QApplication):
     def id(self):
         return self._id
 
+    @property
     def activation_window(self):
-        return self._activationWindow
+        return self._activation_window
 
-    def set_activation_window(self, activationWindow, activateOnMessage = True):
-        self._activationWindow = activationWindow
+    def set_activation_window(self, activationWindow, activateOnMessage=True):
+        self._activation_window = activationWindow
         self._activateOnMessage = activateOnMessage
-        self.messageReceived.connect(self._activationWindow.handle_message)
+        self.messageReceived.connect(self.activation_window.handle_message)
 
     def activate_window(self):
-        if not self._activationWindow:
+        if not self.activation_window:
             return
 #         self._activationWindow.setWindowState(
 #             self._activationWindow.windowState() & Qt.WindowMinimized)
-        self._activationWindow.raise_()
-        self._activationWindow.activate_window()
+        self.activation_window.raise_()
+        self.activation_window.activateWindow()
 
     def send_message(self, msg):
         if not self._outStream:
@@ -147,7 +167,8 @@ class QtSingleApplication(QtGui.QApplication):
     def _on_ready_read(self):
         while True:
             msg = self._inStream.readLine()
-            if not msg: break
+            if not msg:
+                break
             self.messageReceived.emit(msg)        
         
 

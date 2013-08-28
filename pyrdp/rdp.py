@@ -30,7 +30,10 @@ class Settings(object):
     _args = None  
       
     def __init__(self):
-        self._args = {}             
+        self._args = {}
+
+    def __init__(self, args):
+        self._args = args
 
     def __setattr__(self, name, value):
         if name == '_args':
@@ -39,7 +42,10 @@ class Settings(object):
             self._args[name] = value
             
     def __getattr__(self, attr):
-        return self._args[attr]            
+        return self._args[attr]
+
+    def itens(self):
+        return self._args.items()
 
     def __repr__(self):
         return ''.join([('/%s:%s ' % (key, value)) for key, value in self._args.items()])      
