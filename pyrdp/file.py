@@ -19,11 +19,9 @@ class ConnectionFile(object):
 
     def write(self, cfg):
         file = open(self._file_name, 'w')
-        file.write('[settings]')
-        file.newlines()
+        print("[settings]", file=file)
         for key, value in cfg.itens():
-            file.write(('%s=%s' % (key, value)))
-            file.newlines()
+            print(("%s=%s" % (key, value)), file=file)
 
         file.close()
 
