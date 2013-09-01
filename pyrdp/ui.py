@@ -5,6 +5,7 @@ Created on 20/08/2013
 """
 
 from PyQt4 import QtCore, QtGui, QtNetwork, Qt
+from PyQt4.QtCore import pyqtSignal
 from pyrdp import rdp, file
 from uno import unicode
 
@@ -22,10 +23,13 @@ class MainWindow(QtGui.QWidget):
         """
         super().__init__()
         self.resize(width, height)
-        self.setWindowTitle('PyRdp')        
+        self.setWindowTitle('PyRdp')
+        self.setWindowIcon(QtGui.QIcon('../pyrdp.ico'))
         self.move_center()
         self.setFixedSize(self.size())        
-        self._tabs = QtGui.QTabWidget(self) 
+        self._tabs = QtGui.QTabWidget(self)
+        self._tabs.setTabsClosable(True)
+        self.connect(self._tabs, QtCore.SIGNAL("tabCloseRequested(int)"), self.close)
         self._tabs.resize(width, height)
         self._conn_form = None
 
@@ -39,11 +43,15 @@ class MainWindow(QtGui.QWidget):
         tab = ConnectionTab(rdp_conn, self._tabs.width(), self._tabs.height())
         self._tabs.addTab(tab, tab.name)
         tab.open_connection()
+
+    def close(self, index):
+        tab = self._tabs.widget(index)
+        tab.close_connection()
+        self._tabs.removeTab(index)
     
     def close_all(self):
         for tab_index in range(self._tabs.count()):
-            tab = self._tabs.widget(tab_index)
-            tab.close_connection()
+            self.close(tab_index)
     
     def handle_message(self, msg):
         cmd, arg = msg.split(':')
@@ -143,6 +151,20 @@ class ConnectionTab(QtGui.QFrame):
         self._conn = conn
         self.resize(width, height)
         self._conn.cfg.size = ('%dx%d' % (self.width() - 10, self.height() - 25))
+
+        self._log = QtGui.QTextEdit(self)
+
+        log_w = self.width() * 0.80
+        log_h = self.height() * 0.80
+
+        log_left = (self.width() - log_w) / 2
+        log_top = (self.height() - log_h) / 2
+
+        self._log.setGeometry(QtCore.QRect(log_left, log_top, log_w, log_h))
+        p = self._log.palette()
+        p.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
+        self._log.setPalette(p)
+        self._log.setTextColor(QtGui.QColor(255, 255, 255))
         
     @property
     def name(self):
@@ -150,9 +172,13 @@ class ConnectionTab(QtGui.QFrame):
         
     def open_connection(self):
         self._conn.connect(self.winId())
-    
+        self._conn.connect_output(self.print_out)
+
     def close_connection(self):
         self._conn.close()
+
+    def print_out(self, str):
+        self._log.append(str)
         
         
 class QtSingleApplication(QtGui.QApplication):
@@ -200,8 +226,7 @@ class QtSingleApplication(QtGui.QApplication):
     def activate_window(self):
         if not self.activation_window:
             return
-#         self._activationWindow.setWindowState(
-#             self._activationWindow.windowState() & Qt.WindowMinimized)
+        self.activation_window.setWindowState(QtCore.Qt.WindowMaximized)
         self.activation_window.raise_()
         self.activation_window.activateWindow()
 
