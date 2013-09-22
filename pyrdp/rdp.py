@@ -50,6 +50,12 @@ class Settings(object):
             elif key == "plugins":
                 self._plugins = value
 
+    def __setattr__(self, key, value):
+        if key == "_args" or key == "_plugins":
+            object.__setattr__(self, key, value)
+        else:
+            self._args[key] = value
+
     def __getattr__(self, name):
         try:
             value = self._args[name]
