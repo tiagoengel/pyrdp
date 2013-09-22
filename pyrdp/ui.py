@@ -5,18 +5,18 @@ Created on 20/08/2013
 """
 
 from PyQt4 import QtCore, QtGui, QtNetwork, Qt
-from PyQt4.QtCore import pyqtSignal
 from pyrdp import rdp, file
 from uno import unicode
+import os
 
 
 class MainWindow(QtGui.QWidget):
     """
     PyRdp Main Window
     """
-    
+
     _tabs = None
-    
+
     def __init__(self, width, height):
         """
         Constructor
@@ -24,9 +24,9 @@ class MainWindow(QtGui.QWidget):
         super().__init__()
         self.resize(width, height)
         self.setWindowTitle('PyRdp')
-        self.setWindowIcon(QtGui.QIcon('../pyrdp.ico'))
+        self.setWindowIcon(QtGui.QIcon(os.path.dirname(os.path.abspath(__file__)) + '/../pyrdp.ico'))
         self.move_center()
-        self.setFixedSize(self.size())        
+        self.setFixedSize(self.size())
         self._tabs = QtGui.QTabWidget(self)
         self._tabs.setTabsClosable(True)
         self.connect(self._tabs, QtCore.SIGNAL("tabCloseRequested(int)"), self.close)
@@ -38,7 +38,7 @@ class MainWindow(QtGui.QWidget):
         cp = QtGui.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
-        
+
     def add_tab(self, rdp_conn):
         tab = ConnectionTab(rdp_conn, self._tabs.width(), self._tabs.height())
         self._tabs.addTab(tab, tab.name)
@@ -48,11 +48,11 @@ class MainWindow(QtGui.QWidget):
         tab = self._tabs.widget(index)
         tab.close_connection()
         self._tabs.removeTab(index)
-    
+
     def close_all(self):
         for tab_index in range(self._tabs.count()):
             self.close(tab_index)
-    
+
     def handle_message(self, msg):
         cmd, arg = msg.split(':')
         if cmd == 'open':
@@ -86,9 +86,10 @@ class ConnectionDialog(QtGui.QDialog):
 
         self._form_layout = QtGui.QFormLayout()
 
-        self.add_field('Host:', Field.Type.TEXT, 'v')
-        self.add_field('User:', Field.Type.TEXT, 'u')
-        self.add_field('Password:', Field.Type.PASSWORD, 'p')
+        self.add_field('Host:', Field.Type.TEXT, 'v', False)
+        self.add_field('User:', Field.Type.TEXT, 'u', False)
+        self.add_field('Password:', Field.Type.PASSWORD, 'p', False)
+        self.add_field('Sync Clipboard:', Field.Type.CHECK, 'clipboard', True)
 
         mainLayout.addLayout(self._form_layout)
 
@@ -98,18 +99,22 @@ class ConnectionDialog(QtGui.QDialog):
         self.resize(300, 150)
         self.setFixedSize(self.size())
 
-    def add_field(self, label, type, name):
-        field = Field(label, type, name)
+    def add_field(self, label, type, name, plugin):
+        field = Field(label, type, name, plugin)
         self._fields.append(field)
         self._form_layout.addRow(field.lb, field.field)
 
     def save(self):
         cfg = {}
+        plugins = {}
         for field in self._fields:
-            cfg[field.name] = field.field.text()
+            if not field.plugin:
+                cfg[field.name] = field.value
+            else:
+                plugins[field.name] = field.value
 
         conn_file = file.ConnectionFile(self._conn_name)
-        conn_file.write(rdp.Settings(cfg))
+        conn_file.write(rdp.Settings(args=cfg, plugins=plugins))
 
         self.close()
 
@@ -128,26 +133,42 @@ class Field(object):
     class Type(object):
         TEXT = 0
         PASSWORD = 1
+        CHECK = 2
 
-    def __init__(self, label, type, name):
+    def __init__(self, label, type, name, plugin):
+        self.plugin = plugin
         self.lb = QtGui.QLabel(label)
-        self.field = QtGui.QLineEdit()
-        if type == Field.Type.PASSWORD:
-            self.field.setEchoMode(QtGui.QLineEdit.Password)
+        if type == Field.Type.TEXT or type == Field.Type.PASSWORD:
+            self.field = QtGui.QLineEdit()
+            if type == Field.Type.PASSWORD:
+                self.field.setEchoMode(QtGui.QLineEdit.Password)
+        elif type == Field.Type.CHECK:
+            self.field = QtGui.QCheckBox()
+            self.field.setChecked(True)
 
         self.name = name
 
+    @property
+    def value(self):
+        if isinstance(self.field, QtGui.QCheckBox):
+            if self.field.checkState() == 2:
+                return True
+            else:
+                return False
+        else:
+            return self.field.text()
+
 
 class ConnectionTab(QtGui.QFrame):
-    
+
     _conn = None
-    
+
     def __init__(self, conn, width, height):
         super().__init__()
-        
+
         if conn is None:
             raise ValueError("Connection can't be None")
-        
+
         self._conn = conn
         self.resize(width, height)
         self._conn.cfg.size = ('%dx%d' % (self.width() - 10, self.height() - 25))
@@ -165,11 +186,11 @@ class ConnectionTab(QtGui.QFrame):
         p.setColor(QtGui.QPalette.Base, QtGui.QColor(0, 0, 0))
         self._log.setPalette(p)
         self._log.setTextColor(QtGui.QColor(255, 255, 255))
-        
+
     @property
     def name(self):
         return self._conn.cfg.v
-        
+
     def open_connection(self):
         self._conn.connect(self.winId())
         self._conn.connect_output(self.print_out)
@@ -179,8 +200,8 @@ class ConnectionTab(QtGui.QFrame):
 
     def print_out(self, str):
         self._log.append(str)
-        
-        
+
+
 class QtSingleApplication(QtGui.QApplication):
 
     messageReceived = QtCore.pyqtSignal(unicode)
@@ -235,7 +256,7 @@ class QtSingleApplication(QtGui.QApplication):
             return False
         self._outStream << msg << '\n'
         self._outStream.flush()
-        
+
         return self._outSocket.waitForBytesWritten()
 
     def _on_new_connection(self):

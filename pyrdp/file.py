@@ -23,10 +23,14 @@ class ConnectionFile(object):
         for key, value in cfg.itens():
             print(("%s=%s" % (key, value)), file=file)
 
+        print("[plugins]", file=file)
+        for key, value in cfg.plugins():
+            print(("%s=%s" % (key, value)), file=file)
+
         file.close()
 
     def read(self):
         conf = configparser.ConfigParser()
         conf.read(self._file_name, 'UTF-8')
         vars = dict(conf.items('settings'))
-        return Settings(vars)
+        return Settings(args=vars)

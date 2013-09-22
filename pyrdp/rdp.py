@@ -40,29 +40,32 @@ class RdpConnection(object):
                 
 
 class Settings(object):
-      
-    _args = None  
-      
-    def __init__(self):
+
+    def __init__(self, **kwargs):
         self._args = {}
+        self._plugins = {}
+        for key, value in kwargs.items():
+            if key == 'args':
+                self._args = value
+            elif key == "plugins":
+                self._plugins = value
 
-    def __init__(self, args):
-        self._args = args
+    def __getattr__(self, name):
+        try:
+            value = self._args[name]
+        except KeyError:
+            value = object.__getattribute__(self, name)
 
-    def __setattr__(self, name, value):
-        if name == '_args':
-            object.__setattr__(self, name, value)
-        else:            
-            self._args[name] = value
-            
-    def __getattr__(self, attr):
-        return self._args[attr]
+        return value
 
     def itens(self):
         return self._args.items()
+
+    def plugins(self):
+        return self._plugins.items()
 
     def as_list(self):
         return str(self).split(' ')
 
     def __repr__(self):
-        return ''.join([('/%s:%s ' % (key, value)) for key, value in self._args.items()])      
+        return ''.join([('/%s:%s ' % (key, value)) for key, value in self._args.items()])
